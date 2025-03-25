@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">Lab3</string>
+    <string name="btn_back">Back</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_clear">Clear</string>
+    <string name="choose_a_font_size">Choose a font size:</string>
+    <string name="rdb_small">Small</string>
+    <string name="rdb_medium">Medium</string>
+    <string name="rdb_large">Large</string>
+    <string name="enter_text">Enter text...</string>
+    <string name="btn_ok">OK</string>
+    <string name="btn_open_file">Open File</string>
+</resources>
