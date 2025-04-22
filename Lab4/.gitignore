@@ -1,0 +1,23 @@
+# Gradle files
+.gradle/
+build/
+
+# Android Studio specific files
+.idea/
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+
+# User-specific files
+local.properties
+
+# MacOS system files
+.DS_Store
+
+# Generated files
+/captures/
+/.externalNativeBuild/
+/.cxx/

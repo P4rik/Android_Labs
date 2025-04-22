@@ -1,0 +1,15 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/audio_menu"
+        android:icon="@drawable/ic_audio"
+        android:title="@string/audio_str"
+        app:cnb_iconColor="@color/audio"
+        android:titleTextAppearance="@style/MenuItemTextStyle"/>
+    <item
+        android:id="@+id/video_menu"
+        android:icon="@drawable/ic_video"
+        android:title="@string/video_str"
+        app:cnb_iconColor="@color/video"
+        android:titleTextAppearance="@style/MenuItemTextStyle"/>
+</menu>

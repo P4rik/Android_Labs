@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">Lab4</string>
+    <string name="audio_str">Audio</string>
+    <string name="video_str">Video</string>
+    <string name="video_list_str">Video List:</string>
+    <string name="video_choose_str">Select source:</string>
+    <string name="audio_list_str">Audio List:</string>
+    <string name="not_selected_str">Not selected</string>
+    <string name="open_btn_str">OPEN</string>
+    <string name="enter_url_str">Enter URL</string>
+    <string name="audio_no_found_str">Audio no found</string>
+    <string name="video_no_found_str">Video no found</string>
+    <string name="author_str">Author</string>
+    <string name="title_str">Title</string>
+    <string-array name="file_source_options">
+        <item>Internal Storage</item>
+        <item>External Storage</item>
+        <item>From Internet</item>
+    </string-array>
+</resources>

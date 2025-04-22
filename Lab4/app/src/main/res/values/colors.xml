@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Audio -->
+    <color name="audio">#22E3FF</color>
+    <color name="audio_card_ic">#22E3FF</color>
+    <color name="audio_card_bg">#17303A</color>
+    <color name="audio_recycler_bg">#0A1317</color>
+    <!-- Video -->
+    <color name="video">#FF3A3A</color>
+    <color name="video_card_ic">#EB4149</color>
+    <color name="video_card_bg">#3C151E</color>
+    <color name="video_card_tx">#EB4149</color>
+    <color name="video_recycler_bg">#170A0A</color>
+    <!-- Other -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="spinner">#B9B9B9</color>
+</resources>
