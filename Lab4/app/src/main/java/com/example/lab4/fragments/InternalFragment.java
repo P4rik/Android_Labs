@@ -45,8 +45,8 @@ public class InternalFragment extends Fragment {
         noVideo = view.findViewById(R.id.no_video_internal);
 
         Bundle args = getArguments();
-        if (getArguments() != null) {
-            String selectedItem = getArguments().getString("selectedItem");
+        if (args != null) {
+            String selectedItem = args.getString("selectedItem");
 
             View containerView = view.findViewById(R.id.internal_container);
 
