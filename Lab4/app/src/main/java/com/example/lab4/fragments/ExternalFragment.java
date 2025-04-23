@@ -50,8 +50,8 @@ public class ExternalFragment extends Fragment {
 
 
         Bundle args = getArguments();
-        if (getArguments() != null) {
-            String selectedItem = getArguments().getString("selectedItem");
+        if (args != null) {
+            String selectedItem = args.getString("selectedItem");
 
             View containerView = view.findViewById(R.id.external_container);
 
@@ -148,7 +148,7 @@ public class ExternalFragment extends Fragment {
             Cursor cursor = getContext().getContentResolver().query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, projection, null, null, sortOrder);
 
             int count = 0;
-            while (cursor.moveToNext() && count < 10) {
+            while (cursor.moveToNext() && count < 1) {
                 String title = cursor.getString(0);
                 String duration = cursor.getString(1);
                 String path = cursor.getString(2);
