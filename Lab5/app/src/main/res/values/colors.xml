@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="green">#06FF3B</color>
+    <color name="steps">#32FF8E</color>
+    <color name="stats">#9465FB</color>
+    <color name="steps_fragment_bg">#141218</color>
+    <color name="stats_fragment_bg">#1F1537</color>
+</resources>

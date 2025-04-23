@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Lab5</string>
+    <string name="steps_str">Steps</string>
+    <string name="statistics_str">Statistics</string>
+    <string name="change_score_str">Change Score</string>
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="steps_per_day_str">Steps per day</string>
+    <string name="submit_btn">Submit</string>
+    <string name="title_activity_chart_fragment">ChartFragment</string>
+    <string name="title_activity_chart_screen">ChartScreen</string>
+    <string name="score_0_str">Score: 0</string>
+    <string name="steps_0_str">Steps: 0</string>
+    <string name="km_0_str">0 km</string>
+    <string name="kcal_0_str">0 kcal</string>
+</resources>
