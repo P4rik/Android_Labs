@@ -35,8 +35,8 @@ public class InternetFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_url_view, container, false);
 
         Bundle args = getArguments();
-        if (getArguments() != null) {
-            String selectedItem = getArguments().getString("selectedItem");
+        if (args != null) {
+            String selectedItem = args.getString("selectedItem");
 
             View containerView = view.findViewById(R.id.internet_container);
 
