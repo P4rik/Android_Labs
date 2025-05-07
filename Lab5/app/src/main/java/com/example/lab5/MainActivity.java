@@ -1,30 +1,32 @@
 package com.example.lab5;
 
 import android.Manifest;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Context;
-import android.content.SharedPreferences;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-import java.util.Date;
+import java.util.Calendar;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.fragment.app.FragmentManager;
 
 import com.example.lab5.fragments.ScoreSelectorFragment;
-
-import java.text.SimpleDateFormat;
-import java.util.Locale;
+import com.example.lab5.util.StepUtils;
+import com.example.lab5.widget.receiver.ResetStepsReceiver;
+import com.example.lab5.widget.service.StepCounterService;
 
 import antonkozyriatskyi.circularprogressindicator.CircularProgressIndicator;
 
@@ -33,13 +35,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private SensorManager sensorManager;
     private Sensor stepSensor;
     private boolean isSensorAvailable = false;
-    private float totalSteps = 0f;
-    private float previousSteps = 0f;
-    private CircularProgressIndicator circularProgress;
-    private  int stepGoal = 10000;
-    private TextView stepCountText, distanceText, caloriesText, scoreText;
+    private float totalSteps = 0f, previousSteps = 0f;
+    private int stepGoal;
     private String currentDate;
-    private SharedPreferences sharedPreferences;
+    private CircularProgressIndicator circularProgress;
+    private TextView stepCountText, distanceText, caloriesText, scoreText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,43 +47,40 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.activity_main);
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACTIVITY_RECOGNITION ) != PackageManager.PERMISSION_GRANTED) {
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(this, Manifest.permission.ACTIVITY_RECOGNITION) != PackageManager.PERMISSION_GRANTED) {
 
             ActivityCompat.requestPermissions(this,
                     new String[]{
-                            Manifest.permission.ACTIVITY_RECOGNITION,
-                    },
-                    1);
+                            Manifest.permission.POST_NOTIFICATIONS,
+                            Manifest.permission.ACTIVITY_RECOGNITION
+                    }, 1);
+        } else {
+            startStepService();
         }
+
 
         stepCountText = findViewById(R.id.step_count_text);
         distanceText = findViewById(R.id.distance_text);
         caloriesText = findViewById(R.id.calories_text);
         scoreText = findViewById(R.id.score_text);
         circularProgress = findViewById(R.id.circular_progress);
-        circularProgress.setProgress(0, stepGoal);
 
-        sharedPreferences = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        stepGoal = sharedPreferences.getInt("stepGoal", 10000);
+        stepGoal = StepUtils.getStepGoal(this);
+        currentDate = StepUtils.getCurrentDate();
 
-        currentDate = getCurrentDate();
-        String lastDate = sharedPreferences.getString("lastDate", "");
-
+        String lastDate = StepUtils.getPrefs(this).getString("lastDate", "");
         if (!currentDate.equals(lastDate)) {
             totalSteps = 0;
             resetSteps();
         } else {
-            previousSteps = sharedPreferences.getFloat("previousSteps", 0f);
+            previousSteps = StepUtils.getPreviousSteps(this);
             totalSteps = previousSteps;
         }
 
-        circularProgress.setProgress(0, stepGoal);
-
-        int initialSteps = Math.round(totalSteps - previousSteps);
-        int initialMax = Math.max(stepGoal, initialSteps);
-        circularProgress.setProgress(initialSteps, initialMax);
-
-        scoreText.setText("Score: " + stepGoal);
+        updateProgressUI();
+        scheduleDailyResetAlarm();
 
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
@@ -93,48 +90,76 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             stepCountText.setText("The step sensor is not supported on this device");
             distanceText.setVisibility(View.GONE);
             caloriesText.setVisibility(View.GONE);
-
         }
 
         Button getScore_btn = findViewById(R.id.score_btn);
-        getScore_btn.setOnClickListener(view1 -> {
-            ScoreSelectorFragment scoreSelectorFragment = new ScoreSelectorFragment();
-            scoreSelectorFragment.setListener(MainActivity.this);
-
-            Bundle bundle = new Bundle();
-            bundle.putInt("currentGoal", stepGoal);
-            scoreSelectorFragment.setArguments(bundle);
-
-            FragmentManager fragmentManager = getSupportFragmentManager();
-            scoreSelectorFragment.show(fragmentManager, "TEST");
-        });
-
+        getScore_btn.setOnClickListener(v -> showScoreSelector());
     }
 
-    private String getCurrentDate() {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-        return sdf.format(new Date());
+    private void scheduleDailyResetAlarm() {
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        Intent intent = new Intent(this, ResetStepsReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(System.currentTimeMillis());
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+
+        if (calendar.getTimeInMillis() <= System.currentTimeMillis()) {
+            calendar.add(Calendar.DAY_OF_YEAR, 1);
+        }
+
+        if (alarmManager != null) {
+            alarmManager.setRepeating(
+                    AlarmManager.RTC_WAKEUP,
+                    calendar.getTimeInMillis(),
+                    AlarmManager.INTERVAL_DAY,
+                    pendingIntent
+            );
+        }
+    }
+
+    private void startStepService() {
+        Intent serviceIntent = new Intent(this, StepCounterService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent);
+        } else {
+            startService(serviceIntent);
+        }
     }
 
     private void resetSteps() {
         previousSteps = totalSteps;
-
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putFloat("previousSteps", previousSteps);
-        editor.putString("lastDate", currentDate);
-        editor.apply();
-
+        StepUtils.saveStepData(this, totalSteps, currentDate);
         stepCountText.setText("Steps: 0");
         circularProgress.setProgress(0, stepGoal);
         distanceText.setText("Distance: 0.00 km");
         caloriesText.setText("Calories: 0.0 kcal");
     }
 
+    private void updateProgressUI() {
+        int steps = Math.round(totalSteps - previousSteps);
+        int max = Math.max(stepGoal, steps);
+        circularProgress.setProgress(steps, max);
+        scoreText.setText("Goal: " + stepGoal);
+    }
+
+    private void showScoreSelector() {
+        ScoreSelectorFragment fragment = new ScoreSelectorFragment();
+        fragment.setListener(this);
+        Bundle bundle = new Bundle();
+        bundle.putInt("currentGoal", stepGoal);
+        fragment.setArguments(bundle);
+        fragment.show(getSupportFragmentManager(), "ScoreSelector");
+    }
+
     @Override
     public void onSensorChanged(SensorEvent event) {
         if (event.sensor.getType() == Sensor.TYPE_STEP_COUNTER) {
-            String today = getCurrentDate();
-
+            String today = StepUtils.getCurrentDate();
             if (!today.equals(currentDate)) {
                 currentDate = today;
                 resetSteps();
@@ -142,63 +167,43 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
 
             totalSteps = event.values[0];
-            int currentSteps = Math.max(0, Math.round(totalSteps - previousSteps));
+            StepUtils.getPrefs(this).edit().putFloat("totalSteps", totalSteps).apply();
+            int currentSteps = Math.round(totalSteps - previousSteps);
 
             stepCountText.setText("Steps: " + currentSteps);
-            int maxProgress = Math.max(stepGoal, currentSteps);
-            circularProgress.setProgress(currentSteps, maxProgress);
+            circularProgress.setProgress(currentSteps, Math.max(stepGoal, currentSteps));
 
-            float distanceMeters = currentSteps * 0.0007f;
+            float distance = currentSteps * 0.0007f;
             float calories = currentSteps * 0.04f;
-
-            distanceText.setText(String.format("Distance: %.2f km", distanceMeters));
+            distanceText.setText(String.format("Distance: %.2f km", distance));
             caloriesText.setText(String.format("Calories: %.1f kcal", calories));
+
+            StepUtils.updateWidget(this);
         }
     }
 
     @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-    }
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {}
 
     @Override
     public void onScoreSelected(int value) {
-        SharedPreferences sharedPreferences = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putInt("stepGoal", value);
-        editor.apply();
-
+        StepUtils.saveStepGoal(this, value);
         stepGoal = value;
-        Toast.makeText(this, "New goal: " + value + " steps", Toast.LENGTH_SHORT).show();
-
-        int currentSteps = Math.round(totalSteps - previousSteps);
-        int maxProgress = Math.max(stepGoal, currentSteps);
-        circularProgress.setProgress(currentSteps, maxProgress);
-
-        scoreText.setText("Score: " + stepGoal);
+        updateProgressUI();
+        StepUtils.updateWidget(this);
+        Toast.makeText(this, "New goal set: " + value, Toast.LENGTH_SHORT).show();
     }
 
     @Override
-    protected void onStart() {
-        super.onStart();
-        String today = getCurrentDate();
-        if (!today.equals(currentDate)) {
-            currentDate = today;
-            resetSteps();
-        }
-    }
-
-    @Override
-    public void onResume() {
+    protected void onResume() {
         super.onResume();
         if (isSensorAvailable) {
             sensorManager.registerListener(this, stepSensor, SensorManager.SENSOR_DELAY_UI);
-        } else {
-            stepCountText.setText("The step sensor is not supported on this device");
         }
     }
 
     @Override
-    public void onPause() {
+    protected void onPause() {
         super.onPause();
         if (isSensorAvailable) {
             sensorManager.unregisterListener(this);
